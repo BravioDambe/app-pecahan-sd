@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ayo Belajar Pecahan</title>
+    <style>
+        /* 
+         * GLOBAL STYLES & VARIABLES 
+         */
+        :root {
+            --color-blue: #4FB0C6;
+            --color-blue-dark: #3A8E9E;
+            --color-yellow: #FFDF64;
+            --color-yellow-dark: #E6C229;
+            --color-green: #4F86C6; /* Actually using a blue-ish hue for harmony, swapping to grass green below */
+            --color-grass: #88D498;
+            --color-grass-dark: #56B870;
+            --color-red: #FF6B6B;
+            --color-red-dark: #D64545;
+            --color-text: #2D3047;
+            --color-white: #FFFFFF;
+            --font-stack: 'Comic Neue', 'Nunito', 'Segoe UI Rounded', 'Comic Sans MS', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none; /* Important for touch interfaces */
+            -webkit-user-drag: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: var(--font-stack);
+            background-color: #E0F7FA;
+            color: var(--color-text);
+            /* Background pattern */
+            background-image: radial-gradient(var(--color-blue) 10%, transparent 10%);
+            background-position: 0 0;
+            background-size: 30px 30px;
+        }
+
+        /* 
+         * UTILITY CLASSES 
+         */
+        .hidden { display: none !important; }
+        .flex-center { display: flex; align-items: center; justify-content: center; }
+        .column { flex-direction: column; }
+        .row { flex-direction: row; }
+
+        /* 
+         * BUTTONS & INTERACTIVE ELEMENTS 
+         */
+        .btn {
+            border: none;
+            border-radius: 20px;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            font-family: var(--font-stack);
+            cursor: pointer;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+            transition: transform 0.1s, box-shadow 0.1s;
+            min-width: 48px;
+            min-height: 48px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.2);
+        }
+
+        .btn-primary { background-color: var(--color-blue); color: white; border: 2px solid white; }
+        .btn-start { background-color: var(--color-red); color: white; font-size: 2.5rem; padding: 20px 60px; animation: pulse 2s infinite; }
+        .btn-nav { background-color: white; color: var(--color-blue-dark); border: 2px solid var(--color-blue); margin: 5px; font-size: 1.2rem; }
+        .btn-nav.active { background-color: var(--color-blue); color: white; }
+        .btn-back { position: absolute; top: 20px; left: 20px; background-color: var(--color-red); color: white; z-index: 100; font-size: 1rem; padding: 10px 20px; }
+
+        /* 
+         * SCENES / VIEWS 
+         */
+        .view-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        /* Scene 1: Splash */
+        #view-splash {
+            background: linear-gradient(135deg, var(--color-yellow) 0%, var(--color-grass) 100%);
+            z-index: 50;
+        }
+
+        .title-text {
+            font-size: 5rem;
+            color: white;
+            text-shadow: 4px 4px 0px rgba(0,0,0,0.2);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        /* Scene 2: Menu */
+        #view-menu {
+            background-color: #E0F7FA;
+            padding: 2rem;
+        }
+
+        .class-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            max-width: 800px;
+            width: 90%;
+            margin-top: 2rem;
+        }
+
+        .class-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--color-text);
+            box-shadow: 0 8px 0 rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+            cursor: pointer;
+            border: 4px solid var(--color-blue);
+        }
+
+        .class-card:hover { transform: scale(1.02); }
+        .class-card:active { transform: scale(0.98); }
+
+        /* Scene 3: Dashboard */
+        #view-dashboard {
+            display: flex;
+            flex-direction: row;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: white;
+            height: 100%;
+            padding: 80px 10px 20px 10px; /* Top padding for back button */
+            border-right: 4px solid var(--color-blue-dark);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            position: relative;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 
+         * CONTENT MODULES 
+         */
+        
+        /* Slides */
+        .slide-container {
+            background: white;
+            border-radius: 30px;
+            padding: 3rem;
+            width: 90%;
+            height: 80%;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+        }
+        .slide-text { flex: 1; font-size: 1.8rem; line-height: 1.5; }
+        .slide-visual { flex: 1; display: flex; justify-content: center; }
+
+        /* Game */
+        .game-area {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background-color: #f0f9ff;
+            border-radius: 20px;
+            border: 4px dashed var(--color-blue);
+        }
+        
+        .drop-zone {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background-color: rgba(255,255,255,0.8);
+            border: 4px solid #ddd;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, background-color 0.3s;
+        }
+
+        .drop-zone.hovered { transform: translate(-50%, -50%) scale(1.1); background-color: #e0ffd4; border-color: var(--color-grass); }
+        .drop-zone.shake { animation: shake 0.5s; border-color: var(--color-red); }
+
+        .draggable-item {
+            position: absolute;
+            cursor: grab;
+            touch-action: none; /* CRITICAL for Pointer Events */
+            filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2));
+            transition: transform 0.1s;
+        }
+        .draggable-item:active { cursor: grabbing; scale: 1.1; }
+        .draggable-item.snapped { transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
+        .draggable-item.returning { transition: top 0.5s ease-out, left 0.5s ease-out; }
+
+        /* Quiz */
+        .quiz-container {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            width: 80%;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .quiz-question { font-size: 2rem; margin-bottom: 2rem; }
+        .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .btn-option { 
+            background-color: var(--color-yellow); 
+            font-size: 1.5rem; 
+            padding: 20px; 
+            border-radius: 15px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #d4b01e;
+        }
+        .btn-option:active { transform: translateY(4px); box-shadow: none; }
+        .btn-option.correct { background-color: var(--color-grass) !important; color: white; box-shadow: 0 4px 0 var(--color-grass-dark); }
+        .btn-option.wrong { background-color: var(--color-red) !important; color: white; box-shadow: 0 4px 0 var(--color-red-dark); }
+
+        /* Animations */
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0px); } }
+        @keyframes shake { 0% { transform: translate(-50%, -50%) rotate(0deg); } 25% { transform: translate(-55%, -50%) rotate(-5deg); } 75% { transform: translate(-45%, -50%) rotate(5deg); } 100% { transform: translate(-50%, -50%) rotate(0deg); } }
+
+        /* Sound Toggle */
+        .sound-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(255,255,255,0.8);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 1.5rem;
+            border: 2px solid var(--color-text);
+        }
+
+        /* SVG Styles */
+        svg { overflow: visible; }
+        .pie-slice { stroke: #fff; stroke-width: 2; transition: fill 0.3s; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Sound Toggle -->
+    <button id="btn-sound" class="btn sound-toggle flex-center">??</button>
+
+    <!-- VIEW 1: SPLASH SCREEN -->
+    <section id="view-splash" class="view-container flex-center column">
+        <div class="title-text" style="animation: float 3s ease-in-out infinite;">
+            ?? Ayo Belajar<br>Pecahan! ??
+        </div>
+        <button id="btn-splash-start" class="btn btn-start">MULAI</button>
+        
+        <!-- Decorative Elements -->
+        <div style="position: absolute; bottom: 10%; left: 10%; opacity: 0.5;">
+            <svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#FFF" opacity="0.5"/></svg>
+        </div>
+        <div style="position: absolute; top: 10%; right: 10%; opacity: 0.5;">
+            <svg width="80" height="80" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="20" fill="#FFF" opacity="0.5"/></svg>
+        </div>
+    </section>
+
+    <!-- VIEW 2: MENU CLASS SELECTION -->
+    <section id="view-menu" class="view-container hidden flex-center column">
+        <h1 style="font-size: 3rem; color: var(--color-blue-dark);">Pilih Kelasmu</h1>
+        <div class="class-grid">
+            <div class="class-card" data-class="class2">Kelas 2 SD<br><span style="font-size:1rem; font-weight:normal; color:#666;">Pengenalan 1/2, 1/3, 1/4</span></div>
+            <div class="class-card" style="opacity: 0.6; cursor: not-allowed;" data-class="class4">Kelas 4 SD<br><span style="font-size:1rem;">(Segera Hadir)</span></div>
+            <div class="class-card" style="opacity: 0.6; cursor: not-allowed;" data-class="class5">Kelas 5 SD<br><span style="font-size:1rem;">(Segera Hadir)</span></div>
+            <div class="class-card" style="opacity: 0.6; cursor: not-allowed;" data-class="class6">Kelas 6 SD<br><span style="font-size:1rem;">(Segera Hadir)</span></div>
+        </div>
+    </section>
+
+    <!-- VIEW 3: DASHBOARD -->
+    <section id="view-dashboard" class="view-container hidden">
+        <button id="btn-home" class="btn btn-back">? Kembali</button>
+        
+        <nav class="sidebar">
+            <div style="flex:1;"></div> <!-- Spacer -->
+            <button class="btn btn-nav" data-section="tujuan">?? Tujuan</button>
+            <button class="btn btn-nav" data-section="materi">?? Materi</button>
+            <button class="btn btn-nav" data-section="game">?? Main</button>
+            <button class="btn btn-nav" data-section="kuis">? Kuis</button>
+            <div style="flex:3;"></div> <!-- Spacer -->
+        </nav>
+
+        <main class="main-content" id="dynamic-content">
+            <!-- Content Injected Here via JS -->
+        </main>
+    </section>
+
+<script>
+/**
+ * ------------------------------------------------------------------
+ * DATA DICTIONARY (CURRICULUM ENGINE)
+ * ------------------------------------------------------------------
+ */
+const curriculumData = {
+    class2: {
+        themeColor: '#4FB0C6',
+        tujuan: `
+            <h1>Tujuan Belajar</h1>
+            <ul style="font-size: 1.8rem; line-height: 2; text-align: left;">
+                <li>Mengenal pecahan sederhana.</li>
+                <li>Memahami arti setengah (1/2).</li>
+                <li>Memahami arti sepertiga (1/3).</li>
+                <li>Memahami arti seperempat (1/4).</li>
+            </ul>
+        `,
+        slides: [
+            {
+                title: "Apa itu Pecahan?",
+                text: "Pecahan adalah bagian dari benda yang utuh. Bayangkan kamu punya 1 kue utuh, lalu kamu memotongnya.",
+                visualType: "whole",
+                visualColor: "#FF6B6B"
+            },
+            {
+                title: "Satu per Dua (1/2)",
+                text: "Jika 1 kue dipotong menjadi 2 bagian sama besar, setiap bagian disebut 'Setengah' atau 'Satu per Dua'.",
+                visualType: "fraction",
+                numerator: 1,
+                denominator: 2,
+                visualColor: "#FFDF64"
+            },
+            {
+                title: "Satu per Tiga (1/3)",
+                text: "Jika 1 kue dipotong menjadi 3 bagian sama besar, setiap bagian disebut 'Sepertiga'.",
+                visualType: "fraction",
+                numerator: 1,
+                denominator: 3,
+                visualColor: "#88D498"
+            },
+            {
+                title: "Satu per Empat (1/4)",
+                text: "Jika 1 kue dipotong menjadi 4 bagian sama besar, setiap bagian disebut 'Seperempat'.",
+                visualType: "fraction",
+                numerator: 1,
+                denominator: 4,
+                visualColor: "#4FB0C6"
+            }
+        ],
+        gameLevel: {
+            title: "Bantu Ibu membagi Pizza!",
+            instruction: "Tarik potongan <b>1/2 (Setengah)</b> ke piring!",
+            targetValue: 0.5, // 1/2
+            items: [
+                { id: 'p1', val: 0.5, label: '1/2', color: '#FF6B6B', denominator: 2 },
+                { id: 'p2', val: 0.25, label: '1/4', color: '#88D498', denominator: 4 },
+                { id: 'p3', val: 0.33, label: '1/3', color: '#FFDF64', denominator: 3 }
+            ]
+        },
+        quiz: [
+            {
+                q: "Gambar manakah yang menunjukkan pecahan 1/2?",
+                options: [
+                    { label: "1 dari 3 bagian", correct: false },
+                    { label: "1 dari 2 bagian", correct: true },
+                    { label: "1 dari 4 bagian", correct: false },
+                    { label: "Utuh", correct: false }
+                ]
+            },
+            {
+                q: "Ibu memotong kue menjadi 4 bagian sama besar. Satu bagian disebut...",
+                options: [
+                    { label: "Setengah", correct: false },
+                    { label: "Sepertiga", correct: false },
+                    { label: "Seperempat", correct: true },
+                    { label: "Utuh", correct: false }
+                ]
+            },
+            {
+                q: "Lambang bilangan seperdua adalah...",
+                options: [
+                    { label: "1/4", correct: false },
+                    { label: "1/3", correct: false },
+                    { label: "1/2", correct: true },
+                    { label: "1/1", correct: false }
+                ]
+            }
+        ]
+    },
+    // Placeholders for future classes
+    class4: {},
+    class5: {},
+    class6: {}
+};
+
+/**
+ * ------------------------------------------------------------------
+ * STATE MANAGEMENT
+ * ------------------------------------------------------------------
+ */
+const appState = {
+    currentView: 'view-splash',
+    currentClass: null,
+    currentSection: null,
+    slideIndex: 0,
+    quizScore: 0,
+    quizIndex: 0,
+    soundEnabled: false
+};
+
+/**
+ * ------------------------------------------------------------------
+ * SVG FACTORY (The Visual Engine)
+ * ------------------------------------------------------------------
+ */
+
+// Helper to calculate coordinates on a circle
+function getCoordinatesForPercent(percent) {
+    const x = Math.cos(2 * Math.PI * percent);
+    const y = Math.sin(2 * Math.PI * percent);
+    return [x, y];
+}
+
+function createPieSlicePath(startPercent, endPercent) {
+    const [startX, startY] = getCoordinatesForPercent(startPercent);
+    const [endX, endY] = getCoordinatesForPercent(endPercent);
+    const largeArcFlag = endPercent - startPercent > 0.5 ? 1 : 0;
+
+    // SVG Path: Move to center (0,0) -> Line to start -> Arc to end -> Close
+    return `M 0 0 L ${startX} ${startY} A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;
+}
+
+function renderSVG(type, params) {
+    if (type === 'fraction' || type === 'whole') {
+        const { numerator, denominator, color, label } = params;
+        const size = 200;
+        let paths = '';
+        
+        if (type === 'whole') {
+             paths = `<circle cx="0" cy="0" r="1" fill="${color}" stroke="#fff" stroke-width="0.05" />`;
+        } else {
+            // Draw all slices, but highlight the numerator amount
+            for(let i=0; i<denominator; i++) {
+                const start = i / denominator;
+                const end = (i + 1) / denominator;
+                const isActive = i < numerator;
+                const sliceColor = isActive ? color : '#eee';
+                paths += `<path d="${createPieSlicePath(start, end)}" fill="${sliceColor}" stroke="#fff" stroke-width="0.05" />`;
+            }
+        }
+
+        // Add Label Text centered
+        const textTag = label ? `<text x="0" y="0.2" text-anchor="middle" font-size="0.5" fill="#333" font-weight="bold" style="pointer-events:none;">${label}</text>` : '';
+
+        return `
+            <svg width="${size}" height="${size}" viewBox="-1.1 -1.1 2.2 2.2" style="transform: rotate(-90deg); overflow: visible;">
+                <filter id="shadow"><feDropShadow dx="0.05" dy="0.05" stdDeviation="0.05" flood-opacity="0.3"/></filter>
+                <g filter="url(#shadow)">${paths}</g>
+                <g transform="rotate(90)">${textTag}</g>
+            </svg>
+        `;
+    }
+}
+
+/**
+ * ------------------------------------------------------------------
+ * AUDIO ENGINE (Synthesizer)
+ * ------------------------------------------------------------------
+ */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(type) {
+    if (!appState.soundEnabled) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+
+    if (type === 'click') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+    } else if (type === 'correct') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, now); // A4
+        osc.frequency.setValueAtTime(554, now + 0.1); // C#5
+        osc.frequency.setValueAtTime(659, now + 0.2); // E5
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.linearRampToValueAtTime(0, now + 0.6);
+        osc.start(now);
+        osc.stop(now + 0.6);
+    } else if (type === 'wrong') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.linearRampToValueAtTime(100, now + 0.3);
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.linearRampToValueAtTime(0, now + 0.4);
+        osc.start(now);
+        osc.stop(now + 0.4);
+    }
+}
+
+/**
+ * ------------------------------------------------------------------
+ * NAVIGATION LOGIC
+ * ------------------------------------------------------------------
+ */
+function switchView(viewId) {
+    document.querySelectorAll('.view-container').forEach(el => el.classList.add('hidden'));
+    document.getElementById(viewId).classList.remove('hidden');
+    appState.currentView = viewId;
+    playSound('click');
+}
+
+function renderContent(section) {
+    appState.currentSection = section;
+    const container = document.getElementById('dynamic-content');
+    container.innerHTML = '';
+    
+    // Update sidebar active state
+    document.querySelectorAll('.btn-nav').forEach(b => {
+        b.classList.toggle('active', b.dataset.section === section);
+    });
+
+    const data = curriculumData[appState.currentClass];
+
+    if (section === 'tujuan') {
+        container.innerHTML = `<div class="slide-container">${data.tujuan}</div>`;
+    } 
+    else if (section === 'materi') {
+        appState.slideIndex = 0;
+        renderSlide(container, data.slides);
+    }
+    else if (section === 'game') {
+        initGame(container, data.gameLevel);
+    }
+    else if (section === 'kuis') {
+        appState.quizScore = 0;
+        appState.quizIndex = 0;
+        renderQuiz(container, data.quiz);
+    }
+}
+
+/**
+ * ------------------------------------------------------------------
+ * MODULE: SLIDES
+ * ------------------------------------------------------------------
+ */
+function renderSlide(container, slides) {
+    const slide = slides[appState.slideIndex];
+    const svgHTML = renderSVG(slide.visualType, slide);
+
+    const html = `
+        <div class="slide-container">
+            <div class="slide-text">
+                <h2 style="font-size: 2.5rem; color: var(--color-blue-dark);">${slide.title}</h2>
+                <p>${slide.text}</p>
+                <div style="margin-top: 2rem;">
+                    <button class="btn btn-primary" id="prev-slide" ${appState.slideIndex === 0 ? 'disabled style="opacity:0.5"' : ''}>? Sebelumnya</button>
+                    <button class="btn btn-primary" id="next-slide" style="margin-left: 1rem;">${appState.slideIndex === slides.length-1 ? 'Selesai ??' : 'Selanjutnya ?'}</button>
+                </div>
+            </div>
+            <div class="slide-visual">
+                ${svgHTML}
+            </div>
+        </div>
+    `;
+    container.innerHTML = html;
+
+    // Bind events
+    document.getElementById('prev-slide').onclick = () => {
+        if(appState.slideIndex > 0) {
+            appState.slideIndex--;
+            renderSlide(container, slides);
+            playSound('click');
+        }
+    };
+    document.getElementById('next-slide').onclick = () => {
+        if(appState.slideIndex < slides.length - 1) {
+            appState.slideIndex++;
+            renderSlide(container, slides);
+            playSound('click');
+        }
+    };
+}
+
+/**
+ * ------------------------------------------------------------------
+ * MODULE: GAME (DRAG & DROP)
+ * ------------------------------------------------------------------
+ */
+function initGame(container, gameConfig) {
+    // Game HTML Structure
+    container.innerHTML = `
+        <div class="game-area">
+            <h2 style="text-align:center; padding-top:10px;">${gameConfig.title}</h2>
+            <p style="text-align:center; font-size:1.2rem;">${gameConfig.instruction}</p>
+            
+            <div class="drop-zone" id="plate">
+                <span style="font-size: 3rem; opacity: 0.3;">??</span>
+            </div>
+            
+            <div id="draggables-container" style="position: absolute; bottom: 20px; width: 100%; display: flex; justify-content: center; gap: 20px;">
+                <!-- Items injected here -->
+            </div>
+            
+            <div id="game-feedback" class="hidden" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:2rem; border-radius:20px; box-shadow:0 10px 30px rgba(0,0,0,0.3); text-align:center;">
+                <h1 style="color: var(--color-grass-dark);">Benar! ??</h1>
+                <button class="btn btn-primary" onclick="renderContent('kuis')">Lanjut ke Kuis</button>
+            </div>
+        </div>
+    `;
+
+    const draggablesContainer = document.getElementById('draggables-container');
+    const plate = document.getElementById('plate');
+
+    // Create Draggable Items
+    gameConfig.items.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'draggable-item';
+        div.dataset.value = item.val;
+        div.dataset.id = item.id;
+        
+        // Use SVG Factory
+        div.innerHTML = renderSVG('fraction', { 
+            numerator: 1, 
+            denominator: item.denominator, 
+            color: item.color, 
+            label: item.label 
+        });
+
+        // Initial positions (staggered)
+        div.style.position = 'relative'; 
+        draggablesContainer.appendChild(div);
+
+        // Attach Pointer Events
+        setupDrag(div, plate, gameConfig.targetValue);
+    });
+}
+
+function setupDrag(element, targetZone, targetValue) {
+    let isDragging = false;
+    let startX, startY, initialLeft, initialTop;
+
+    element.onpointerdown = function(e) {
+        isDragging = true;
+        element.setPointerCapture(e.pointerId);
+        
+        // Get initial position relative to viewport to handle transforms
+        const rect = element.getBoundingClientRect();
+        const parentRect = element.parentElement.getBoundingClientRect();
+        
+        // If it's the first drag, we might need to switch from relative layout to absolute for free movement
+        // simpler approach: Use translate transform
+        
+        startX = e.clientX;
+        startY = e.clientY;
+        
+        // Remove transitions during drag
+        element.classList.remove('returning');
+        element.style.zIndex = 1000;
+        playSound('click');
+    };
+
+    element.onpointermove = function(e) {
+        if (!isDragging) return;
+        
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        
+        // Apply transform
+        // Note: we accumulate transform if needed, but for simple app, setting just translate is okay
+        // We need to know current transform if any.
+        // Simplified: Just move visual
+        element.style.transform = `translate(${dx}px, ${dy}px)`;
+        
+        // Simple collision check for hover effect
+        const itemRect = element.getBoundingClientRect();
+        const zoneRect = targetZone.getBoundingClientRect();
+        
+        if (isOverlapping(itemRect, zoneRect)) {
+            targetZone.classList.add('hovered');
+        } else {
+            targetZone.classList.remove('hovered');
+        }
+    };
+
+    element.onpointerup = function(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        element.releasePointerCapture(e.pointerId);
+        element.style.zIndex = '';
+        targetZone.classList.remove('hovered');
+
+        const itemRect = element.getBoundingClientRect();
+        const zoneRect = targetZone.getBoundingClientRect();
+
+        if (isOverlapping(itemRect, zoneRect)) {
+            // Check value
+            const val = parseFloat(element.dataset.value);
+            if (val === targetValue) {
+                // CORRECT
+                playSound('correct');
+                // Snap to center of plate
+                // Calculation: Move element so its center matches zone center
+                // Since we used translate, we need to calculate the delta to center
+                // Visual cheat: Hide dragged, append new static SVG in center of plate
+                element.style.display = 'none';
+                targetZone.innerHTML = element.innerHTML; // Put pizza on plate
+                document.getElementById('game-feedback').classList.remove('hidden');
+                
+                // Confetti effect (simple visual change)
+                document.body.style.backgroundColor = '#d4ffdc';
+                setTimeout(() => document.body.style.backgroundColor = '#E0F7FA', 500);
+
+            } else {
+                // WRONG VALUE
+                playSound('wrong');
+                targetZone.classList.add('shake');
+                setTimeout(() => targetZone.classList.remove('shake'), 500);
+                springBack(element);
+            }
+        } else {
+            // MISSED TARGET
+            springBack(element);
+        }
+    };
+}
+
+function isOverlapping(rect1, rect2) {
+    const distance = Math.hypot(
+        (rect1.x + rect1.width/2) - (rect2.x + rect2.width/2),
+        (rect1.y + rect1.height/2) - (rect2.y + rect2.height/2)
+    );
+    return distance < (rect2.width / 2); // Within radius roughly
+}
+
+function springBack(element) {
+    element.classList.add('returning');
+    element.style.transform = 'translate(0px, 0px)';
+}
+
+/**
+ * ------------------------------------------------------------------
+ * MODULE: QUIZ
+ * ------------------------------------------------------------------
+ */
+function renderQuiz(container, questions) {
+    if (appState.quizIndex >= questions.length) {
+        // End Screen
+        const scorePct = Math.round((appState.quizScore / questions.length) * 100);
+        let msg = scorePct === 100 ? "Luar Biasa!" : "Bagus Sekali!";
+        
+        container.innerHTML = `
+            <div class="quiz-container">
+                <h1>${msg}</h1>
+                <div style="font-size: 4rem; color: var(--color-blue); margin: 2rem;">${scorePct}</div>
+                <button class="btn btn-primary" onclick="switchView('view-menu')">Kembali ke Menu</button>
+            </div>
+        `;
+        playSound('correct');
+        return;
+    }
+
+    const q = questions[appState.quizIndex];
+    let optionsHTML = '';
+    
+    q.options.forEach((opt, idx) => {
+        optionsHTML += `<button class="btn btn-option" onclick="handleQuizAnswer(this, ${opt.correct})">${opt.label}</button>`;
+    });
+
+    container.innerHTML = `
+        <div class="quiz-container">
+            <div style="margin-bottom:1rem; color:#888;">Pertanyaan ${appState.quizIndex + 1} / ${questions.length}</div>
+            <div class="quiz-question">${q.q}</div>
+            <div class="quiz-options">${optionsHTML}</div>
+        </div>
+    `;
+}
+
+window.handleQuizAnswer = function(btn, isCorrect) {
+    // Disable all buttons
+    const btns = document.querySelectorAll('.btn-option');
+    btns.forEach(b => b.disabled = true);
+
+    if (isCorrect) {
+        btn.classList.add('correct');
+        appState.quizScore++;
+        playSound('correct');
+    } else {
+        btn.classList.add('wrong');
+        playSound('wrong');
+    }
+
+    // Auto advance
+    setTimeout(() => {
+        appState.quizIndex++;
+        renderQuiz(document.getElementById('dynamic-content'), curriculumData[appState.currentClass].quiz);
+    }, 1500);
+};
+
+/**
+ * ------------------------------------------------------------------
+ * INITIALIZATION & EVENT LISTENERS
+ * ------------------------------------------------------------------
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // Splash Start
+    document.getElementById('btn-splash-start').addEventListener('click', () => {
+        switchView('view-menu');
+    });
+
+    // Sound Toggle
+    document.getElementById('btn-sound').addEventListener('click', (e) => {
+        appState.soundEnabled = !appState.soundEnabled;
+        e.target.innerText = appState.soundEnabled ? '??' : '??';
+        if(appState.soundEnabled && audioCtx.state === 'suspended') audioCtx.resume();
+    });
+
+    // Class Selection
+    document.querySelectorAll('.class-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const classId = card.dataset.class;
+            // Only Class 2 is active in this prototype
+            if (classId !== 'class2') return;
+
+            appState.currentClass = classId;
+            switchView('view-dashboard');
+            // Default load tujuan
+            renderContent('tujuan');
+        });
+    });
+
+    // Dashboard Navigation
+    document.querySelectorAll('.btn-nav').forEach(btn => {
+        btn.addEventListener('click', () => {
+            renderContent(btn.dataset.section);
+            playSound('click');
+        });
+    });
+
+    // Back to Menu
+    document.getElementById('btn-home').addEventListener('click', () => {
+        switchView('view-menu');
+    });
+});
+
+</script>
+</body>
+</html>
