@@ -40,12 +40,26 @@ function createPieSlicePath(startPercent, endPercent) {
 function renderSVG(type, params) {
     const { numerator = 1, denominator = 1, color = '#4FB0C6', label } = params;
 
-    // CARD / TEXT
+    // CARD / TEXT (Also used for Price Tags)
     if (type === 'text' || type === 'card') {
         return `
             <svg viewBox="0 0 200 200" style="overflow: visible; width:100%; height:100%;">
                 <rect x="10" y="10" width="180" height="180" rx="20" fill="${color || '#fff'}" stroke="#ccc" stroke-width="4"/>
-                <text x="100" y="110" text-anchor="middle" dominant-baseline="middle" font-size="50" font-weight="bold" fill="white" style="text-shadow: 2px 2px 0px rgba(0,0,0,0.1);">${label}</text>
+                <text x="100" y="100" text-anchor="middle" dominant-baseline="middle" font-size="40" font-weight="bold" fill="white" style="text-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
+                    ${label.split('\n').map((t, i) => `<tspan x="100" dy="${i === 0 ? 0 : 45}">${t}</tspan>`).join('')}
+                </text>
+            </svg>
+        `;
+    }
+
+    // BOX (For Market Product)
+    if (type === 'box') {
+        return `
+            <svg viewBox="0 0 200 200" style="overflow: visible; width:100%; height:100%;">
+                <rect x="20" y="40" width="160" height="140" rx="5" fill="${color}" stroke="#3E2723" stroke-width="2"/>
+                <polygon points="20,40 50,10 210,10 180,40" fill="#8D6E63" stroke="#3E2723" stroke-width="2"/>
+                <polygon points="180,40 210,10 210,150 180,180" fill="#6D4C41" stroke="#3E2723" stroke-width="2"/>
+                <text x="100" y="120" text-anchor="middle" font-size="30" font-weight="bold" fill="white" style="text-shadow: 1px 1px 0 #000;">${label}</text>
             </svg>
         `;
     }
@@ -276,7 +290,99 @@ function setupUniversalDrag(element, onMove, onDrop) {
 function initGame(container, gameConfig) {
     if (gameConfig.type === 'scales') initScalesGame(container, gameConfig);
     else if (gameConfig.type === 'lab') initLabGame(container, gameConfig);
+    else if (gameConfig.type === 'market') initMarketGame(container, gameConfig); // Added Class 6
     else initDefaultGame(container, gameConfig);
+}
+
+// === CLASS 6: MARKET GAME ===
+function initMarketGame(container, gameConfig) {
+    appState.scaleLocked = false;
+    
+    // Pick random problem
+    const problem = gameConfig.problems[Math.floor(Math.random() * gameConfig.problems.length)];
+
+    // Draggables: Answer + Distractors
+    let pool = gameConfig.draggables.filter(d => d.val === problem.ans); // Correct
+    if(pool.length === 0) pool = [ { val: problem.ans, label: ''+problem.ans } ]; // Fallback if correct not found
+    
+    // Add distractors
+    const distractors = gameConfig.draggables.filter(d => d.val !== problem.ans)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 5);
+    
+    pool = [...pool, ...distractors].sort(() => Math.random() - 0.5);
+
+    container.innerHTML = `
+        <div class="game-area">
+            <div class="game-header">
+                <h2>${gameConfig.title}</h2>
+                <div class="score-board">Skor: ${appState.gameScore}</div>
+            </div>
+            <p style="text-align:center; font-size:1.5rem; margin: 10px 0;">${gameConfig.instruction}</p>
+            
+            <div class="market-workspace">
+                <div class="product-display">
+                    ${renderSVG('box', { color: '#795548', label: 'Harga:\n' + problem.price })}
+                    <div class="discount-sticker">Diskon<br>${problem.discountLabel}</div>
+                    <div class="price-tag-slot" id="price-slot">Bayar?</div>
+                </div>
+                <div class="market-shelf"></div>
+            </div>
+
+            <div id="draggables-container"></div>
+            
+            <div id="game-feedback" class="hidden modal-overlay">
+                <div class="modal-content">
+                    <h1>Lunas! 💰</h1>
+                    <button class="btn btn-primary" onclick="playSound('click'); appState.gameScore++; initGame(document.getElementById('dynamic-content'), curriculumData['class6'].gameLevel)">Belanja Lagi ➡</button>
+                    <button class="btn btn-sm" onclick="playSound('click'); renderContent('kuis')">Kuis</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const draggablesContainer = document.getElementById('draggables-container');
+    const priceSlot = document.getElementById('price-slot');
+
+    pool.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'draggable-item';
+        div.dataset.value = item.val;
+        div.innerHTML = renderSVG('card', { label: item.label, color: '#4CAF50' }); // Green Money Color
+        draggablesContainer.appendChild(div);
+
+        setupUniversalDrag(div,
+            (e, ghost) => {
+                 const zoneRect = priceSlot.getBoundingClientRect();
+                 const ghostRect = ghost.getBoundingClientRect();
+                 const overlap = isOverlapping(ghostRect, zoneRect);
+                 priceSlot.style.borderColor = overlap ? '#FF9800' : '#999';
+                 priceSlot.style.backgroundColor = overlap ? 'rgba(255, 152, 0, 0.2)' : 'rgba(0,0,0,0.1)';
+            },
+            (e, ghost) => {
+                const zoneRect = priceSlot.getBoundingClientRect();
+                const ghostRect = ghost.getBoundingClientRect();
+                if (isOverlapping(ghostRect, zoneRect)) {
+                    const val = parseFloat(div.dataset.value);
+                    if (Math.abs(val - problem.ans) < 0.001) {
+                        playSound('correct');
+                        priceSlot.innerHTML = `<span style="font-weight:bold; font-size:1.5rem; color:#2E7D32">${div.dataset.value}</span>`;
+                        priceSlot.style.borderColor = '#4CAF50';
+                        priceSlot.style.backgroundColor = '#E8F5E9';
+                        div.style.display = 'none';
+                        setTimeout(() => document.getElementById('game-feedback').classList.remove('hidden'), 500);
+                        return true;
+                    } else {
+                        playSound('wrong');
+                        priceSlot.style.backgroundColor = '#FFEBEE';
+                        setTimeout(() => priceSlot.style.backgroundColor = 'rgba(0,0,0,0.1)', 500);
+                        return false;
+                    }
+                }
+                return false;
+            }
+        );
+    });
 }
 
 // === CLASS 5: LAB GAME ===

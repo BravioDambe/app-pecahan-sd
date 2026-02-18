@@ -392,5 +392,112 @@ const curriculumData = {
                 ]
             }
         ]
+    },
+
+    class6: {
+        themeColor: '#FF9800',
+        tujuan: `
+            <h1>Tujuan Belajar (Kelas 6)</h1>
+            <ul style="font-size: 1.2em; line-height: 1.8; text-align: left;">
+                <li><b>Rasio (Perbandingan):</b> Memahami A : B.</li>
+                <li><b>Hubungan:</b> Pecahan, Desimal, dan Persen itu bersaudara!</li>
+                <li><b>Aplikasi Nyata:</b> Menghitung diskon harga barang.</li>
+            </ul>
+        `,
+        slides: [
+            {
+                title: "Rasio (Perbandingan)",
+                text: "Rasio adalah membandingkan dua jumlah. Jika ada 2 Apel Merah dan 3 Apel Hijau, rasionya 2 : 3.",
+                visualType: "text",
+                label: "🍎🍎 : 🍏🍏🍏\n2 : 3",
+                visualColor: "#FF9800"
+            },
+            {
+                title: "Semuanya Sama!",
+                text: "Setengah kue (1/2) = 0.5 bagian = 50% bagian. Bentuknya beda, nilainya SAMA.",
+                visualType: "fraction",
+                numerator: 1,
+                denominator: 2,
+                visualColor: "#FF5722"
+            },
+            {
+                title: "Menghitung Diskon",
+                text: "Diskon 20% artinya harga dipotong 20/100. Kamu hanya membayar sisanya (80%).",
+                visualType: "card",
+                label: "Diskon\n20%",
+                visualColor: "#F44336"
+            }
+        ],
+        gameLevel: {
+            type: 'market',
+            title: "Pasar Diskon",
+            instruction: "Hitung harga setelah diskon! Tarik harga yang benar ke barang.",
+            problems: [
+                { price: 100, discount: 0.5, discountLabel: "50%", ans: 50 },
+                { price: 200, discount: 0.25, discountLabel: "1/4", ans: 150 },
+                { price: 50, discount: 0.1, discountLabel: "10%", ans: 45 },
+                { price: 1000, discount: 0.2, discountLabel: "20%", ans: 800 },
+                { price: 40, discount: 0.5, discountLabel: "1/2", ans: 20 }
+            ],
+            draggables: [
+                { val: 50, label: '50' },
+                { val: 150, label: '150' },
+                { val: 45, label: '45' },
+                { val: 800, label: '800' },
+                { val: 20, label: '20' },
+                { val: 100, label: '100' }, // Distractors
+                { val: 25, label: '25' },
+                { val: 900, label: '900' },
+                { val: 60, label: '60' },
+                { val: 10, label: '10' }
+            ]
+        },
+        quiz: [
+            {
+                q: "Bentuk persen dari 1/2 adalah...",
+                options: [
+                    { label: "20%", correct: false },
+                    { label: "50%", correct: true },
+                    { label: "100%", correct: false },
+                    { label: "25%", correct: false }
+                ]
+            },
+            {
+                q: "Perbandingan siswa laki-laki (10) dan perempuan (15) adalah...",
+                options: [
+                    { label: "10 : 15", correct: false },
+                    { label: "2 : 3", correct: true },
+                    { label: "1 : 2", correct: false },
+                    { label: "3 : 2", correct: false }
+                ]
+            },
+            {
+                q: "Harga baju Rp 100.000 diskon 10%. Berapa yang harus dibayar?",
+                options: [
+                    { label: "Rp 90.000", correct: true },
+                    { label: "Rp 10.000", correct: false },
+                    { label: "Rp 80.000", correct: false },
+                    { label: "Rp 100.000", correct: false }
+                ]
+            },
+            {
+                q: "0.75 jika diubah menjadi pecahan biasa adalah...",
+                options: [
+                    { label: "1/4", correct: false },
+                    { label: "3/4", correct: true },
+                    { label: "2/3", correct: false },
+                    { label: "1/2", correct: false }
+                ]
+            },
+            {
+                q: "Jarak pada peta 1 cm, jarak sebenarnya 100 km. Ini disebut...",
+                options: [
+                    { label: "Skala", correct: true },
+                    { label: "Debit", correct: false },
+                    { label: "Volume", correct: false },
+                    { label: "Luas", correct: false }
+                ]
+            }
+        ]
     }
 };
