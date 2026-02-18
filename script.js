@@ -14,7 +14,9 @@ const appState = {
     gameScore: 0,
     // Scale Game Specific
     scaleTarget: null,
-    scaleLocked: false
+    scaleLocked: false,
+    // Lab Game Specific
+    labProblem: null
 };
 
 /**
@@ -36,17 +38,40 @@ function createPieSlicePath(startPercent, endPercent) {
 }
 
 function renderSVG(type, params) {
+    const { numerator = 1, denominator = 1, color = '#4FB0C6', label } = params;
+
+    // CARD / TEXT
     if (type === 'text' || type === 'card') {
-        const { label, color } = params;
         return `
-            <svg viewBox="0 0 200 200" style="overflow: visible; width:100%; height:100%; max-width:200px; max-height:200px;">
-                <defs><filter id="shadow-card"><feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.2"/></filter></defs>
-                <rect x="10" y="10" width="180" height="180" rx="20" fill="${color || '#fff'}" stroke="${color ? 'white' : '#ccc'}" stroke-width="4" filter="url(#shadow-card)"/>
+            <svg viewBox="0 0 200 200" style="overflow: visible; width:100%; height:100%;">
+                <rect x="10" y="10" width="180" height="180" rx="20" fill="${color || '#fff'}" stroke="#ccc" stroke-width="4"/>
                 <text x="100" y="110" text-anchor="middle" dominant-baseline="middle" font-size="50" font-weight="bold" fill="white" style="text-shadow: 2px 2px 0px rgba(0,0,0,0.1);">${label}</text>
             </svg>
         `;
     }
-    const { numerator = 1, denominator = 1, color = '#4FB0C6', label } = params;
+
+    // BEAKER (For Class 5 Lab)
+    if (type === 'beaker') {
+        const heightPct = (numerator / denominator) * 140; // Max liquid height 140
+        return `
+            <svg viewBox="0 0 100 200" style="overflow: visible; width:100%; height:100%;">
+                <!-- Glass -->
+                <path d="M 10 10 L 10 180 Q 10 200 30 200 L 70 200 Q 90 200 90 180 L 90 10" fill="rgba(255,255,255,0.3)" stroke="#555" stroke-width="4" />
+                <!-- Liquid -->
+                <rect x="15" y="${190 - heightPct}" width="70" height="${heightPct}" rx="5" fill="${color}" opacity="0.8">
+                    <animate attributeName="height" from="0" to="${heightPct}" dur="1s" fill="freeze" />
+                    <animate attributeName="y" from="190" to="${190 - heightPct}" dur="1s" fill="freeze" />
+                </rect>
+                <!-- Graduations -->
+                <line x1="20" y1="50" x2="40" y2="50" stroke="#555" stroke-width="2" opacity="0.5"/>
+                <line x1="20" y1="120" x2="40" y2="120" stroke="#555" stroke-width="2" opacity="0.5"/>
+                <!-- Label -->
+                <text x="50" y="100" text-anchor="middle" font-size="24" font-weight="bold" fill="#333">${numerator}/${denominator}</text>
+            </svg>
+        `;
+    }
+
+    // PIE CHART
     let paths = '';
     if (type === 'whole') {
          paths = `<circle cx="0" cy="0" r="1" fill="${color}" stroke="#fff" stroke-width="0.05" />`;
@@ -61,7 +86,7 @@ function renderSVG(type, params) {
     }
     const textTag = label ? `<text x="0" y="0.2" text-anchor="middle" font-size="0.5" fill="#333" font-weight="bold" style="pointer-events:none;">${label}</text>` : '';
     return `
-        <svg viewBox="-1.1 -1.1 2.2 2.2" style="transform: rotate(-90deg); overflow: visible; width:100%; height:100%; max-width:200px; max-height:200px;">
+        <svg viewBox="-1.1 -1.1 2.2 2.2" style="transform: rotate(-90deg); overflow: visible; width:100%; height:100%;">
             <filter id="shadow"><feDropShadow dx="0.05" dy="0.05" stdDeviation="0.05" flood-opacity="0.3"/></filter>
             <g filter="url(#shadow)">${paths}</g>
             <g transform="rotate(90)">${textTag}</g>
@@ -74,15 +99,29 @@ function renderSVG(type, params) {
  * AUDIO ENGINE
  * ------------------------------------------------------------------
  */
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+// ✅ FIX 1: Don't create AudioContext at load time — create it lazily on first interaction
+let audioCtx = null;
+function getAudioCtx() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    return audioCtx;
+}
+
+
+// ✅ FIX 2: Update playSound to use getAudioCtx()
 function playSound(type) {
     if (!appState.soundEnabled) return;
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
+    
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
     osc.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    const now = audioCtx.currentTime;
+    gainNode.connect(ctx.destination);
+    const now = ctx.currentTime;
 
     if (type === 'click') {
         osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
@@ -111,7 +150,9 @@ function switchView(viewId) {
     playSound('click');
 }
 
+// ✅ FIX 3: Add playSound('click')
 function renderContent(section) {
+    playSound('click');
     appState.currentSection = section;
     const container = document.getElementById('dynamic-content');
     container.innerHTML = '';
@@ -140,86 +181,81 @@ function renderSlide(container, slides) {
         </div>
     `;
     container.innerHTML = html;
-    document.getElementById('prev-slide').onclick = () => { if(appState.slideIndex > 0) { appState.slideIndex--; renderSlide(container, slides); }};
-    document.getElementById('next-slide').onclick = () => { if(appState.slideIndex < slides.length - 1) { appState.slideIndex++; renderSlide(container, slides); } else renderContent('game'); };
+    
+    // ✅ FIX 3: Add playSound('click')
+    document.getElementById('prev-slide').onclick = () => { 
+        playSound('click');
+        if(appState.slideIndex > 0) { 
+            appState.slideIndex--; 
+            renderSlide(container, slides); 
+        }
+    };
+    document.getElementById('next-slide').onclick = () => { 
+        playSound('click');
+        if(appState.slideIndex < slides.length - 1) { 
+            appState.slideIndex++; 
+            renderSlide(container, slides); 
+        } else {
+            renderContent('game'); 
+        }
+    };
 }
 
 /**
  * ------------------------------------------------------------------
- * HELPER: GHOST DRAG ENGINE (ROBUST FIX)
+ * HELPER: GHOST DRAG ENGINE
  * ------------------------------------------------------------------
  */
 function setupUniversalDrag(element, onMove, onDrop) {
-    // We attach the start listener to the element itself
     element.addEventListener('pointerdown', handleDragStart);
 
     function handleDragStart(e) {
         if (appState.scaleLocked) return;
-        
-        // Prevent default touch actions (scrolling)
         e.preventDefault();
-        
         playSound('click');
 
-        // 1. Calculate Offsets
         const rect = element.getBoundingClientRect();
         const offsetX = e.clientX - rect.left;
         const offsetY = e.clientY - rect.top;
 
-        // 2. Create Ghost Element (The one that moves)
-        // We clone the element to visualy represent the drag
         const ghost = element.cloneNode(true);
-        ghost.classList.add('drag-ghost'); // See CSS
+        ghost.classList.add('drag-ghost');
         ghost.style.position = 'fixed';
         ghost.style.left = rect.left + 'px';
         ghost.style.top = rect.top + 'px';
         ghost.style.width = rect.width + 'px';
         ghost.style.height = rect.height + 'px';
-        ghost.style.zIndex = '99999';
-        ghost.style.pointerEvents = 'none'; // Critical: allows hit testing beneath
-        ghost.style.opacity = '0.9';
         ghost.style.margin = '0';
         document.body.appendChild(ghost);
 
-        // 3. Hide Original (But keep layout space)
-        element.style.opacity = '0';
+        element.style.opacity = '0'; // Hide original but keep space to prevent alignment shifts
         
-        // 4. Global Event Listeners (Track mouse anywhere)
         const moveHandler = (moveEvent) => {
             const x = moveEvent.clientX - offsetX;
             const y = moveEvent.clientY - offsetY;
             ghost.style.left = x + 'px';
             ghost.style.top = y + 'px';
-
-            // Hit Testing for Highlight logic
-            // We pass the ghost (visual) coordinates to the callback
             if (onMove) onMove(moveEvent, ghost);
         };
 
         const upHandler = (upEvent) => {
-            // Cleanup listeners immediately
             window.removeEventListener('pointermove', moveHandler);
             window.removeEventListener('pointerup', upHandler);
 
-            // Execute Drop Logic
-            // onDrop checks logic. If true, it means drop accepted.
             const success = onDrop ? onDrop(upEvent, ghost) : false;
 
             if (success) {
-                // Drop successful: Ghost removed by consumer or just remove it
                 ghost.remove();
-                // Original element usually removed or hidden by game logic
+                // If consumed, you might want to remove element, otherwise it stays hidden
             } else {
-                // Drop failed: Revert animation
+                // Revert animation
                 const currentRect = ghost.getBoundingClientRect();
                 const originalRect = element.getBoundingClientRect();
                 
-                // Animate ghost back to start
                 ghost.style.transition = 'all 0.3s ease-out';
                 ghost.style.left = originalRect.left + 'px';
                 ghost.style.top = originalRect.top + 'px';
                 
-                // When animation ends
                 setTimeout(() => {
                     ghost.remove();
                     element.style.opacity = '1';
@@ -227,7 +263,6 @@ function setupUniversalDrag(element, onMove, onDrop) {
             }
         };
 
-        // Attach to window to catch release outside element
         window.addEventListener('pointermove', moveHandler);
         window.addEventListener('pointerup', upHandler);
     }
@@ -240,34 +275,126 @@ function setupUniversalDrag(element, onMove, onDrop) {
  */
 function initGame(container, gameConfig) {
     if (gameConfig.type === 'scales') initScalesGame(container, gameConfig);
+    else if (gameConfig.type === 'lab') initLabGame(container, gameConfig);
     else initDefaultGame(container, gameConfig);
+}
+
+// === CLASS 5: LAB GAME ===
+function initLabGame(container, gameConfig) {
+    appState.scaleLocked = false;
+    
+    // Pick random problem
+    const problem = gameConfig.problems[Math.floor(Math.random() * gameConfig.problems.length)];
+    appState.labProblem = problem;
+
+    // Draggables: Answer + Distractors
+    let pool = gameConfig.draggables.filter(d => Math.abs(d.val - problem.res.val) < 0.001); // Correct
+    if(pool.length === 0) pool = [gameConfig.draggables[0]]; // Fallback
+    
+    // Add distractors
+    const distractors = gameConfig.draggables.filter(d => Math.abs(d.val - problem.res.val) > 0.001)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 5);
+    
+    pool = [...pool, ...distractors].sort(() => Math.random() - 0.5);
+
+    // ✅ FIX 3: Add playSound('click') to dynamic buttons
+    container.innerHTML = `
+        <div class="game-area">
+            <div class="game-header">
+                <h2>${gameConfig.title}</h2>
+                <div class="score-board">Skor: ${appState.gameScore}</div>
+            </div>
+            <p style="text-align:center; font-size:1.5rem; margin: 10px 0;">${problem.display}</p>
+            
+            <div class="lab-workspace">
+                <div class="beaker-stand">
+                    ${renderSVG('beaker', {numerator: problem.a.n, denominator: problem.a.d, color: problem.a.color})}
+                    <div style="text-align:center; font-weight:bold;">A</div>
+                </div>
+                <div style="font-size:3rem; font-weight:bold;">+</div>
+                <div class="beaker-stand">
+                    ${renderSVG('beaker', {numerator: problem.b.n, denominator: problem.b.d, color: problem.b.color})}
+                    <div style="text-align:center; font-weight:bold;">B</div>
+                </div>
+                <div style="font-size:3rem; font-weight:bold;">=</div>
+                <div class="beaker-stand" id="cauldron">
+                    <!-- Drop Target -->
+                    <div class="lab-drop-target">?</div>
+                </div>
+            </div>
+
+            <div id="draggables-container"></div>
+            
+            <div id="game-feedback" class="hidden modal-overlay">
+                <div class="modal-content">
+                    <h1>Ramuan Berhasil! 🧪</h1>
+                    <button class="btn btn-primary" onclick="playSound('click'); appState.gameScore++; initGame(document.getElementById('dynamic-content'), curriculumData['class5'].gameLevel)">Racik Lagi ➡</button>
+                    <button class="btn btn-sm" onclick="playSound('click'); renderContent('kuis')">Kuis</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const draggablesContainer = document.getElementById('draggables-container');
+    const cauldron = document.getElementById('cauldron');
+
+    pool.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'draggable-item';
+        div.dataset.value = item.val;
+        div.innerHTML = renderSVG('beaker', item);
+        draggablesContainer.appendChild(div);
+
+        setupUniversalDrag(div,
+            (e, ghost) => {
+                 const zoneRect = cauldron.getBoundingClientRect();
+                 const ghostRect = ghost.getBoundingClientRect();
+                 const overlap = isOverlapping(ghostRect, zoneRect);
+                 cauldron.style.borderColor = overlap ? '#FFDF64' : '#ccc';
+            },
+            (e, ghost) => {
+                const zoneRect = cauldron.getBoundingClientRect();
+                const ghostRect = ghost.getBoundingClientRect();
+                if (isOverlapping(ghostRect, zoneRect)) {
+                    const val = parseFloat(div.dataset.value);
+                    if (Math.abs(val - problem.res.val) < 0.001) {
+                        playSound('correct');
+                        cauldron.innerHTML = div.innerHTML;
+                        cauldron.style.borderColor = '#88D498';
+                        div.style.display = 'none';
+                        setTimeout(() => document.getElementById('game-feedback').classList.remove('hidden'), 500);
+                        return true;
+                    } else {
+                        playSound('wrong');
+                        return false;
+                    }
+                }
+                return false;
+            }
+        );
+    });
 }
 
 // === CLASS 4: SCALES GAME ===
 function initScalesGame(container, gameConfig) {
     appState.scaleLocked = false;
-    
-    // Pick random target
     const randomTarget = gameConfig.targets[Math.floor(Math.random() * gameConfig.targets.length)];
     appState.scaleTarget = randomTarget;
 
-    // Filter draggables
     let possibleCorrects = gameConfig.draggables.filter(d => 
         Math.abs(d.val - randomTarget.val) < 0.001 && d.label !== randomTarget.label
     );
-    // Fallback if strict filter is too strict
     if (possibleCorrects.length === 0) possibleCorrects = gameConfig.draggables.filter(d => Math.abs(d.val - randomTarget.val) < 0.001);
+    
+    let distractors = gameConfig.draggables.filter(d => Math.abs(d.val - randomTarget.val) > 0.001);
 
-    let distractors = gameConfig.draggables.filter(d => 
-        Math.abs(d.val - randomTarget.val) > 0.001
-    );
-
-    // Build pool: 1 Correct + 5 Distractors
     const pool = [
         possibleCorrects[Math.floor(Math.random() * possibleCorrects.length)],
         ...distractors.sort(() => Math.random() - 0.5).slice(0, 5)
     ].sort(() => Math.random() - 0.5);
 
+    // ✅ FIX 3: Add playSound('click') to dynamic buttons
     container.innerHTML = `
         <div class="game-area">
             <div class="game-header">
@@ -294,15 +421,14 @@ function initScalesGame(container, gameConfig) {
             <div id="game-feedback" class="hidden modal-overlay">
                 <div class="modal-content">
                     <h1>Seimbang! 🎉</h1>
-                    <button class="btn btn-primary" onclick="appState.gameScore++; initGame(document.getElementById('dynamic-content'), curriculumData['class4'].gameLevel)">Lanjut ➡</button>
-                    <button class="btn btn-sm" onclick="renderContent('kuis')">Kuis</button>
+                    <button class="btn btn-primary" onclick="playSound('click'); appState.gameScore++; initGame(document.getElementById('dynamic-content'), curriculumData['class4'].gameLevel)">Lanjut ➡</button>
+                    <button class="btn btn-sm" onclick="playSound('click'); renderContent('kuis')">Kuis</button>
                 </div>
             </div>
         </div>
     `;
 
     const draggablesContainer = document.getElementById('draggables-container');
-    
     pool.forEach(item => {
         if(!item) return;
         const div = document.createElement('div');
@@ -312,19 +438,13 @@ function initScalesGame(container, gameConfig) {
         draggablesContainer.appendChild(div);
         
         setupUniversalDrag(div, 
-            // On Move (Highlight)
             (e, ghostEl) => {
                 const dropZone = document.getElementById('scale-drop-zone');
                 const panRight = document.getElementById('pan-right');
-                
                 const ghostRect = ghostEl.getBoundingClientRect();
                 const zoneRect = dropZone.getBoundingClientRect();
-                
-                // Hit test
                 const overlap = isOverlapping(ghostRect, zoneRect);
                 panRight.classList.toggle('highlight-pan', overlap);
-                
-                // Physics Preview
                 if (overlap) {
                     const draggedVal = parseFloat(div.dataset.value);
                     updateScaleTilt(appState.scaleTarget.val, draggedVal);
@@ -332,37 +452,26 @@ function initScalesGame(container, gameConfig) {
                     updateScaleTilt(appState.scaleTarget.val, 0);
                 }
             },
-            // On Drop
             (e, ghostEl) => {
                 const dropZone = document.getElementById('scale-drop-zone');
                 const panRight = document.getElementById('pan-right');
-                
                 const ghostRect = ghostEl.getBoundingClientRect();
                 const zoneRect = dropZone.getBoundingClientRect();
-                
-                // Clean highlight
                 panRight.classList.remove('highlight-pan');
-
                 if (isOverlapping(ghostRect, zoneRect)) {
                     appState.scaleLocked = true;
                     const draggedVal = parseFloat(div.dataset.value);
                     const targetVal = appState.scaleTarget.val;
-                    
                     updateScaleTilt(targetVal, draggedVal);
-
                     if (Math.abs(draggedVal - targetVal) < 0.001) {
                         playSound('correct');
-                        // Render result in pan
                         panRight.innerHTML = `<div class="scale-item-placed">${div.innerHTML}</div>`;
-                        div.style.display = 'none'; // Hide original
+                        div.style.display = 'none';
                         setTimeout(() => document.getElementById('game-feedback').classList.remove('hidden'), 1000);
                         return true;
                     } else {
                         playSound('wrong');
-                        setTimeout(() => {
-                            updateScaleTilt(targetVal, 0);
-                            appState.scaleLocked = false;
-                        }, 1200);
+                        setTimeout(() => { updateScaleTilt(targetVal, 0); appState.scaleLocked = false; }, 1200);
                         return false; 
                     }
                 }
@@ -370,7 +479,6 @@ function initScalesGame(container, gameConfig) {
             }
         );
     });
-
     updateScaleTilt(appState.scaleTarget.val, 0);
 }
 
@@ -378,22 +486,19 @@ function updateScaleTilt(leftVal, rightVal) {
     const beam = document.getElementById('beam');
     const panLeft = document.getElementById('pan-left-container');
     const panRight = document.getElementById('pan-right-container');
-    
     const diff = rightVal - leftVal;
     const angle = Math.max(-20, Math.min(20, diff * 40)); 
-
     beam.style.transform = `rotate(${angle}deg)`;
     panLeft.style.transform = `rotate(${-angle}deg)`;
     panRight.style.transform = `rotate(${-angle}deg)`;
 }
 
-// === CLASS 2: DEFAULT GAME (REPLAYABLE) ===
+// === CLASS 2: DEFAULT GAME ===
 function initDefaultGame(container, gameConfig) {
     const randomTarget = gameConfig.targets[Math.floor(Math.random() * gameConfig.targets.length)];
-    appState.scaleTarget = randomTarget;
-    
     const instruction = gameConfig.instruction.replace('[TARGET]', randomTarget.label);
 
+    // ✅ FIX 3: Add playSound('click') to dynamic buttons
     container.innerHTML = `
         <div class="game-area">
             <div class="game-header">
@@ -406,8 +511,8 @@ function initDefaultGame(container, gameConfig) {
             <div id="game-feedback" class="hidden modal-overlay">
                 <div class="modal-content">
                     <h1>Mantap! 🍕</h1>
-                    <button class="btn btn-primary" onclick="appState.gameScore++; initGame(document.getElementById('dynamic-content'), curriculumData['class2'].gameLevel)">Lanjut Round Baru ➡</button>
-                    <button class="btn btn-sm" onclick="renderContent('kuis')">Ke Kuis</button>
+                    <button class="btn btn-primary" onclick="playSound('click'); appState.gameScore++; initGame(document.getElementById('dynamic-content'), curriculumData['class2'].gameLevel)">Lanjut ➡</button>
+                    <button class="btn btn-sm" onclick="playSound('click'); renderContent('kuis')">Ke Kuis</button>
                 </div>
             </div>
         </div>
@@ -416,40 +521,28 @@ function initDefaultGame(container, gameConfig) {
     const draggablesContainer = document.getElementById('draggables-container');
     const plate = document.getElementById('plate');
 
-    // Build Pool
     let possibleCorrects = gameConfig.items.filter(d => Math.abs(d.val - randomTarget.val) < 0.001);
-    let distractors = gameConfig.items.filter(d => Math.abs(d.val - randomTarget.val) > 0.001);
     if (possibleCorrects.length === 0) possibleCorrects = [gameConfig.items[0]]; 
-
-    const pool = [
-        possibleCorrects[Math.floor(Math.random() * possibleCorrects.length)],
-        ...distractors.sort(() => Math.random() - 0.5).slice(0, 5)
-    ].sort(() => Math.random() - 0.5);
+    let distractors = gameConfig.items.filter(d => Math.abs(d.val - randomTarget.val) > 0.001);
+    const pool = [possibleCorrects[0], ...distractors.slice(0, 5)].sort(() => Math.random() - 0.5);
 
     pool.forEach((item) => {
-        if(!item) return;
         const div = document.createElement('div');
         div.className = 'draggable-item';
         div.dataset.value = item.val;
         div.innerHTML = renderSVG(item.type || 'fraction', item);
         draggablesContainer.appendChild(div);
-        
         setupUniversalDrag(div,
-            // On Move
-            (e, ghostEl) => {
+            (e, ghost) => {
                 const zoneRect = plate.getBoundingClientRect();
-                const ghostRect = ghostEl.getBoundingClientRect();
-                const overlap = isOverlapping(ghostRect, zoneRect);
-                plate.classList.toggle('hovered', overlap);
+                const ghostRect = ghost.getBoundingClientRect();
+                plate.classList.toggle('hovered', isOverlapping(ghostRect, zoneRect));
             },
-            // On Drop
-            (e, ghostEl) => {
+            (e, ghost) => {
                 const zoneRect = plate.getBoundingClientRect();
-                const ghostRect = ghostEl.getBoundingClientRect();
-                const overlap = isOverlapping(ghostRect, zoneRect);
+                const ghostRect = ghost.getBoundingClientRect();
                 plate.classList.remove('hovered');
-
-                if (overlap) {
+                if (isOverlapping(ghostRect, zoneRect)) {
                     const val = parseFloat(div.dataset.value);
                     if (Math.abs(val - randomTarget.val) < 0.001) {
                         playSound('correct');
@@ -475,15 +568,9 @@ function isOverlapping(rect1, rect2) {
     const center1Y = rect1.top + rect1.height / 2;
     const center2X = rect2.left + rect2.width / 2;
     const center2Y = rect2.top + rect2.height / 2;
-    const distance = Math.hypot(center1X - center2X, center1Y - center2Y);
-    return distance < Math.min(rect2.width, rect2.height) / 2;
+    return Math.hypot(center1X - center2X, center1Y - center2Y) < Math.min(rect2.width, rect2.height) / 2;
 }
 
-/**
- * ------------------------------------------------------------------
- * QUIZ
- * ------------------------------------------------------------------
- */
 function renderQuiz(container, questions) {
     if (appState.quizIndex >= questions.length) {
         const scorePct = Math.round((appState.quizScore / questions.length) * 100);
@@ -496,7 +583,6 @@ function renderQuiz(container, questions) {
         `;
         return;
     }
-
     const q = questions[appState.quizIndex];
     container.innerHTML = `
         <div class="quiz-container">
@@ -507,7 +593,9 @@ function renderQuiz(container, questions) {
     `;
 }
 
+// ✅ FIX 3: Add playSound('click')
 window.handleQuizAnswer = (btn, isCorrect) => {
+    playSound('click');
     document.querySelectorAll('.btn-option').forEach(b => b.disabled = true);
     if (isCorrect) { btn.classList.add('correct'); appState.quizScore++; playSound('correct'); }
     else { btn.classList.add('wrong'); playSound('wrong'); }
@@ -517,21 +605,30 @@ window.handleQuizAnswer = (btn, isCorrect) => {
     }, 1500);
 };
 
-/**
- * ------------------------------------------------------------------
- * INIT
- * ------------------------------------------------------------------
- */
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('btn-splash-start').onclick = () => switchView('view-menu');
+    // ✅ FIX 4: Remove unlockAudio() call
+    document.getElementById('btn-splash-start').onclick = () => {
+        switchView('view-menu');
+    };
+    
     document.getElementById('btn-back-to-splash').onclick = () => switchView('view-splash');
     document.getElementById('btn-home').onclick = () => switchView('view-menu');
-    document.getElementById('btn-settings').onclick = () => document.getElementById('modal-settings').classList.remove('hidden');
-    document.getElementById('btn-close-settings').onclick = () => document.getElementById('modal-settings').classList.add('hidden');
+
+    // ✅ FIX 3: Add playSound('click')
+    document.getElementById('btn-settings').onclick = () => {
+        playSound('click');
+        document.getElementById('modal-settings').classList.remove('hidden');
+    };
+    document.getElementById('btn-close-settings').onclick = () => {
+        playSound('click');
+        document.getElementById('modal-settings').classList.add('hidden');
+    };
     document.getElementById('btn-toggle-sound').onclick = (e) => {
+        playSound('click');
         appState.soundEnabled = !appState.soundEnabled;
         e.target.innerText = appState.soundEnabled ? 'Nyala 🔊' : 'Mati 🔇';
     };
+
     document.querySelectorAll('.class-card').forEach(card => {
         card.onclick = () => {
             if (card.classList.contains('disabled')) return;
@@ -541,5 +638,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderContent('tujuan');
         };
     });
+    
     document.querySelectorAll('.btn-nav').forEach(btn => btn.onclick = () => renderContent(btn.dataset.section));
 });
