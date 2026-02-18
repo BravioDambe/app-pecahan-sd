@@ -295,6 +295,14 @@ function initGame(container, gameConfig) {
 }
 
 // === CLASS 6: MARKET GAME ===
+// 🐛 Fix 2: Rectangular overlap helper
+function isRectOverlapping(rect1, rect2) {
+    return !(rect1.right < rect2.left || 
+             rect1.left > rect2.right || 
+             rect1.bottom < rect2.top || 
+             rect1.top > rect2.bottom);
+}
+
 function initMarketGame(container, gameConfig) {
     appState.scaleLocked = false;
     
@@ -312,6 +320,7 @@ function initMarketGame(container, gameConfig) {
     
     pool = [...pool, ...distractors].sort(() => Math.random() - 0.5);
 
+    // 🐛 Fix 1 & 4: Restructure layout & shelf visual
     container.innerHTML = `
         <div class="game-area">
             <div class="game-header">
@@ -321,12 +330,17 @@ function initMarketGame(container, gameConfig) {
             <p style="text-align:center; font-size:1.5rem; margin: 10px 0;">${gameConfig.instruction}</p>
             
             <div class="market-workspace">
-                <div class="product-display">
-                    ${renderSVG('box', { color: '#795548', label: 'Harga:\n' + problem.price })}
-                    <div class="discount-sticker">Diskon<br>${problem.discountLabel}</div>
-                    <div class="price-tag-slot" id="price-slot">Bayar?</div>
+                <div class="shelf-display">
+                    <div class="product-box">
+                        ${renderSVG('box', { color: '#795548', label: 'Harga:\n' + problem.price })}
+                        <div class="discount-sticker">Diskon<br>${problem.discountLabel}</div>
+                    </div>
+                    <div class="market-shelf"></div>
                 </div>
-                <div class="market-shelf"></div>
+                <!-- 🐛 Fix 1: Larger, clearer drop zone -->
+                <div class="price-tag-slot" id="price-slot">
+                    <span style="opacity:0.6; font-size:1.2rem;">Tempel Harga<br>Akhir Disini</span>
+                </div>
             </div>
 
             <div id="draggables-container"></div>
@@ -355,14 +369,16 @@ function initMarketGame(container, gameConfig) {
             (e, ghost) => {
                  const zoneRect = priceSlot.getBoundingClientRect();
                  const ghostRect = ghost.getBoundingClientRect();
-                 const overlap = isOverlapping(ghostRect, zoneRect);
+                 // 🐛 Fix 2: Use rectangular overlap check
+                 const overlap = isRectOverlapping(ghostRect, zoneRect);
                  priceSlot.style.borderColor = overlap ? '#FF9800' : '#999';
-                 priceSlot.style.backgroundColor = overlap ? 'rgba(255, 152, 0, 0.2)' : 'rgba(0,0,0,0.1)';
+                 priceSlot.style.backgroundColor = overlap ? 'rgba(255, 152, 0, 0.2)' : 'rgba(255,255,255,0.8)';
             },
             (e, ghost) => {
                 const zoneRect = priceSlot.getBoundingClientRect();
                 const ghostRect = ghost.getBoundingClientRect();
-                if (isOverlapping(ghostRect, zoneRect)) {
+                // 🐛 Fix 2: Use rectangular overlap check
+                if (isRectOverlapping(ghostRect, zoneRect)) {
                     const val = parseFloat(div.dataset.value);
                     if (Math.abs(val - problem.ans) < 0.001) {
                         playSound('correct');
@@ -375,7 +391,7 @@ function initMarketGame(container, gameConfig) {
                     } else {
                         playSound('wrong');
                         priceSlot.style.backgroundColor = '#FFEBEE';
-                        setTimeout(() => priceSlot.style.backgroundColor = 'rgba(0,0,0,0.1)', 500);
+                        setTimeout(() => priceSlot.style.backgroundColor = 'rgba(255,255,255,0.8)', 500);
                         return false;
                     }
                 }
