@@ -1,0 +1,21 @@
+{
+  "name": "Ayo Belajar Pecahan",
+  "short_name": "BelajarPecahan",
+  "description": "Aplikasi belajar pecahan interaktif untuk anak SD",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#E0F7FA",
+  "theme_color": "#4FB0C6",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192.png/4FB0C6/FFFFFF?text=ABP",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512.png/4FB0C6/FFFFFF?text=ABP",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

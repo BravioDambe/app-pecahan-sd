@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ayo Belajar Pecahan</title>
+    <meta name="theme-color" content="#4FB0C6">
+    <meta name="description" content="Aplikasi belajar pecahan interaktif untuk siswa SD">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png"> 
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+
+    <!-- Header UI -->
+    <div class="top-ui">
+        <button id="btn-settings" class="btn-icon" aria-label="Pengaturan">⚙️</button>
+    </div>
+
+    <!-- VIEW 1: SPLASH SCREEN -->
+    <section id="view-splash" class="view-container flex-center column">
+        <div class="title-text" style="animation: float 3s ease-in-out infinite;">
+            🍕 Ayo Belajar<br>Pecahan! 🍰
+        </div>
+        <button id="btn-splash-start" class="btn btn-start">MULAI</button>
+        
+        <!-- Decorative Elements -->
+        <div class="deco-circle">
+            <svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#FFF" opacity="0.5"/></svg>
+        </div>
+        <div class="deco-rect">
+            <svg width="80" height="80" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="20" fill="#FFF" opacity="0.5"/></svg>
+        </div>
+    </section>
+
+    <!-- VIEW 2: MENU CLASS SELECTION -->
+    <section id="view-menu" class="view-container hidden flex-center column">
+        <button id="btn-back-to-splash" class="btn btn-back">🏠 Halaman Utama</button>
+        <h1 class="menu-title">Pilih Kelasmu</h1>
+        <div class="class-grid">
+            <div class="class-card" data-class="class2">Kelas 2 SD<br><span class="card-subtitle">Pengenalan 1/2, 1/3, 1/4</span></div>
+            <div class="class-card disabled" data-class="class4">Kelas 4 SD<br><span class="card-subtitle">(Segera Hadir)</span></div>
+            <div class="class-card disabled" data-class="class5">Kelas 5 SD<br><span class="card-subtitle">(Segera Hadir)</span></div>
+            <div class="class-card disabled" data-class="class6">Kelas 6 SD<br><span class="card-subtitle">(Segera Hadir)</span></div>
+        </div>
+    </section>
+
+    <!-- VIEW 3: DASHBOARD -->
+    <section id="view-dashboard" class="view-container hidden">
+        <button id="btn-home" class="btn btn-back">⬅ Pilih Kelas</button>
+        
+        <nav class="sidebar">
+            <div class="spacer"></div>
+            <button class="btn btn-nav" data-section="tujuan">🎯 <span class="nav-label">Tujuan</span></button>
+            <button class="btn btn-nav" data-section="materi">📖 <span class="nav-label">Materi</span></button>
+            <button class="btn btn-nav" data-section="game">🎮 <span class="nav-label">Main</span></button>
+            <button class="btn btn-nav" data-section="kuis">❓ <span class="nav-label">Kuis</span></button>
+            <div class="spacer"></div>
+        </nav>
+
+        <main class="main-content" id="dynamic-content">
+            <!-- Content Injected Here via JS -->
+        </main>
+    </section>
+
+    <!-- SETTINGS MODAL -->
+    <div id="modal-settings" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>Pengaturan</h2>
+            <div class="setting-row">
+                <span>Suara Efek</span>
+                <button id="btn-toggle-sound" class="btn btn-sm">Nyala 🔊</button>
+            </div>
+            <div class="setting-row">
+                <span>Reset Progress</span>
+                <button id="btn-reset" class="btn btn-sm btn-danger">Reset</button>
+            </div>
+            <hr>
+            <p style="font-size: 0.8rem; color: #666;">Versi 1.1.0</p>
+            <button id="btn-close-settings" class="btn btn-primary">Tutup</button>
+        </div>
+    </div>
+
+    <!-- Data and Scripts -->
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
