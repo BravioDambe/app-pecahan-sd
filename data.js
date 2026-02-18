@@ -10,9 +10,8 @@ const curriculumData = {
             <h1>Tujuan Belajar</h1>
             <ul style="font-size: 1.2em; line-height: 1.8; text-align: left;">
                 <li>Mengenal pecahan sederhana.</li>
-                <li>Memahami arti setengah (1/2).</li>
-                <li>Memahami arti sepertiga (1/3).</li>
-                <li>Memahami arti seperempat (1/4).</li>
+                <li>Memahami arti setengah (1/2), sepertiga (1/3), dan seperempat (1/4).</li>
+                <li>Mengenal pecahan dengan penyebut ganjil (1/5).</li>
             </ul>
         `,
         slides: [
@@ -48,16 +47,28 @@ const curriculumData = {
             }
         ],
         gameLevel: {
-            title: "Bantu Ibu membagi Pizza!",
-            instruction: "Tarik potongan <b>1/2 (Setengah)</b> ke piring!",
-            targetValue: 0.5, // 1/2
+            title: "Dapur Pecahan",
+            instruction: "Tarik makanan yang nilainya <b>[TARGET]</b> ke piring!",
+            targetIcon: "🍽",
+            // Pool of possible targets for Random Rounds
+            targets: [
+                { val: 0.5, label: '1/2', type: 'fraction', numerator: 1, denominator: 2, color: '#FF6B6B' },
+                { val: 0.333, label: '1/3', type: 'fraction', numerator: 1, denominator: 3, color: '#FFDF64' },
+                { val: 0.25, label: '1/4', type: 'fraction', numerator: 1, denominator: 4, color: '#88D498' },
+                { val: 0.2, label: '1/5', type: 'fraction', numerator: 1, denominator: 5, color: '#4FB0C6' },
+                { val: 0.666, label: '2/3', type: 'fraction', numerator: 2, denominator: 3, color: '#9C27B0' }
+            ],
+            // Large pool of items to draw from (Answers + Distractors)
             items: [
-                { id: 'p1', val: 0.5, label: '1/2', color: '#FF6B6B', denominator: 2 },
-                { id: 'p2', val: 0.25, label: '1/4', color: '#88D498', denominator: 4 },
-                { id: 'p3', val: 0.33, label: '1/3', color: '#FFDF64', denominator: 3 },
-                { id: 'p4', val: 0.25, label: '1/4', color: '#4FB0C6', denominator: 4 },
-                { id: 'p5', val: 0.5, label: '1/2', color: '#FF6B6B', denominator: 2 },
-                { id: 'p6', val: 0.33, label: '1/3', color: '#FFDF64', denominator: 3 }
+                { id: 'p1', val: 0.5, label: '1/2', type: 'fraction', color: '#FF6B6B', denominator: 2, numerator: 1 },
+                { id: 'p2', val: 0.25, label: '1/4', type: 'fraction', color: '#88D498', denominator: 4, numerator: 1 },
+                { id: 'p3', val: 0.333, label: '1/3', type: 'fraction', color: '#FFDF64', denominator: 3, numerator: 1 },
+                { id: 'p4', val: 0.2, label: '1/5', type: 'fraction', color: '#4FB0C6', denominator: 5, numerator: 1 },
+                { id: 'p5', val: 0.4, label: '2/5', type: 'fraction', color: '#9C27B0', denominator: 5, numerator: 2 },
+                { id: 'p6', val: 0.666, label: '2/3', type: 'fraction', color: '#FF9800', denominator: 3, numerator: 2 },
+                { id: 'p7', val: 0.75, label: '3/4', type: 'fraction', color: '#795548', denominator: 4, numerator: 3 },
+                { id: 'p8', val: 0.5, label: '1/2', type: 'fraction', color: '#FF6B6B', denominator: 2, numerator: 1 }, // Duplicate for pool
+                { id: 'p9', val: 0.333, label: '1/3', type: 'fraction', color: '#FFDF64', denominator: 3, numerator: 1 } // Duplicate
             ]
         },
         quiz: [
@@ -136,16 +147,13 @@ const curriculumData = {
         ]
     },
     
-    // KELAS 4: Comprehensive Curriculum
     class4: {
         themeColor: '#9C27B0',
         tujuan: `
             <h1>Tujuan Belajar (Kelas 4)</h1>
             <ul style="font-size: 1.2em; line-height: 1.8; text-align: left;">
-                <li><b>Pecahan Senilai:</b> Memahami bahwa 1/2 itu sama dengan 2/4 atau 50/100.</li>
-                <li><b>Menyederhanakan:</b> Mengubah pecahan besar menjadi sederhana.</li>
-                <li><b>Membandingkan:</b> Membedakan mana yang lebih besar, 1/3 atau 1/5?</li>
-                <li><b>Konversi:</b> Mengubah Pecahan ke Desimal dan Persen.</li>
+                <li><b>Pecahan Senilai:</b> 1/2 = 2/4 = 0.5.</li>
+                <li><b>Membandingkan:</b> Mana yang lebih berat atau lebih besar?</li>
             </ul>
         `,
         slides: [
@@ -190,18 +198,41 @@ const curriculumData = {
             }
         ],
         gameLevel: {
-            title: "Lab Pecahan Senilai",
-            instruction: "Tarik semua kartu yang nilainya <b>SAMA dengan 1/2</b> ke dalam timbangan!",
-            targetValue: 0.5,
-            items: [
-                { id: 'c4_1', val: 0.5, label: '2/4', type: 'fraction', numerator: 2, denominator: 4, color: '#FF6B6B' }, // Correct
-                { id: 'c4_2', val: 0.5, label: '0.5', type: 'text', color: '#9C27B0' }, // Correct
-                { id: 'c4_3', val: 0.5, label: '50%', type: 'text', color: '#FF9800' }, // Correct
-                { id: 'c4_4', val: 0.5, label: '4/8', type: 'fraction', numerator: 4, denominator: 8, color: '#4CAF50' }, // Correct
-                { id: 'c4_5', val: 0.33, label: '1/3', type: 'fraction', numerator: 1, denominator: 3, color: '#03A9F4' }, // Wrong
-                { id: 'c4_6', val: 0.25, label: '1/4', type: 'fraction', numerator: 1, denominator: 4, color: '#E91E63' }, // Wrong
-                { id: 'c4_7', val: 0.75, label: '3/4', type: 'text', color: '#795548' }, // Wrong
-                { id: 'c4_8', val: 0.2, label: '1/5', type: 'text', color: '#607D8B' } // Wrong
+            type: 'scales',
+            title: "Timbangan Senilai",
+            instruction: "Cari pecahan yang nilainya SAMA (Senilai)!",
+            targets: [
+                { val: 0.5, label: '1/2', type: 'fraction', numerator: 1, denominator: 2, color: '#FF6B6B' },
+                { val: 0.25, label: '1/4', type: 'fraction', numerator: 1, denominator: 4, color: '#88D498' },
+                { val: 0.75, label: '3/4', type: 'fraction', numerator: 3, denominator: 4, color: '#2196F3' },
+                { val: 0.2, label: '1/5', type: 'fraction', numerator: 1, denominator: 5, color: '#4FB0C6' },
+                { val: 0.4, label: '2/5', type: 'fraction', numerator: 2, denominator: 5, color: '#9C27B0' },
+                { val: 0.666, label: '2/3', type: 'fraction', numerator: 2, denominator: 3, color: '#FF9800' }
+            ],
+            draggables: [
+                // 1/2 Equivalents
+                { val: 0.5, label: '2/4', type: 'fraction', numerator: 2, denominator: 4, color: '#FF6B6B' },
+                { val: 0.5, label: '0.5', type: 'text', color: '#9C27B0' },
+                { val: 0.5, label: '3/6', type: 'fraction', numerator: 3, denominator: 6, color: '#FF5722' },
+                // 1/4 Equivalents
+                { val: 0.25, label: '2/8', type: 'fraction', numerator: 2, denominator: 8, color: '#88D498' },
+                { val: 0.25, label: '0.25', type: 'text', color: '#4CAF50' },
+                // 3/4 Equivalents
+                { val: 0.75, label: '6/8', type: 'fraction', numerator: 6, denominator: 8, color: '#2196F3' },
+                { val: 0.75, label: '0.75', type: 'text', color: '#3F51B5' },
+                // 1/5 Equivalents
+                { val: 0.2, label: '2/10', type: 'fraction', numerator: 2, denominator: 10, color: '#00BCD4' },
+                { val: 0.2, label: '0.2', type: 'text', color: '#009688' },
+                // 2/5 Equivalents
+                { val: 0.4, label: '4/10', type: 'fraction', numerator: 4, denominator: 10, color: '#9C27B0' },
+                { val: 0.4, label: '0.4', type: 'text', color: '#673AB7' },
+                // 2/3 Equivalents
+                { val: 0.666, label: '4/6', type: 'fraction', numerator: 4, denominator: 6, color: '#FFC107' },
+                
+                // Distractors
+                { val: 0.1, label: '1/10', type: 'text', color: '#607D8B' },
+                { val: 0.8, label: '4/5', type: 'fraction', numerator: 4, denominator: 5, color: '#795548' },
+                { val: 0.3, label: '0.3', type: 'text', color: '#E91E63' }
             ]
         },
         quiz: [
@@ -278,8 +309,5 @@ const curriculumData = {
                 ]
             }
         ]
-    },
-
-    class5: {},
-    class6: {}
+    }
 };
