@@ -53,6 +53,21 @@ function createPieSlicePath(startPercent, endPercent) {
 }
 
 function renderSVG(type, params) {
+    // 1. TEXT / CARD TYPE (For Decimals, Percentages, or comparison symbols)
+    if (type === 'text' || type === 'card') {
+        const { label, color } = params;
+        return `
+            <svg viewBox="0 0 200 200" style="overflow: visible; width:100%; height:100%; max-width:200px; max-height:200px;">
+                <defs>
+                    <filter id="shadow-card"><feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.2"/></filter>
+                </defs>
+                <rect x="10" y="10" width="180" height="180" rx="20" fill="${color || '#fff'}" stroke="${color ? 'white' : '#ccc'}" stroke-width="4" filter="url(#shadow-card)"/>
+                <text x="100" y="110" text-anchor="middle" dominant-baseline="middle" font-size="50" font-weight="bold" fill="white" style="text-shadow: 2px 2px 0px rgba(0,0,0,0.1);">${label}</text>
+            </svg>
+        `;
+    }
+
+    // 2. PIE CHART TYPE (For Fractions)
     if (type === 'fraction' || type === 'whole') {
         const { numerator, denominator, color, label } = params;
         
@@ -231,7 +246,7 @@ function initGame(container, gameConfig) {
             <p style="text-align:center; font-size:1.2rem; margin: 0.5rem;">${gameConfig.instruction}</p>
             
             <div class="drop-zone" id="plate">
-                <span style="font-size: 3rem; opacity: 0.3;">🍽</span>
+                <span style="font-size: 3rem; opacity: 0.3;">⚖️</span>
             </div>
             
             <div id="draggables-container">
@@ -255,9 +270,12 @@ function initGame(container, gameConfig) {
         div.dataset.value = item.val;
         div.dataset.id = item.id;
         
-        // Use SVG Factory
-        div.innerHTML = renderSVG('fraction', { 
-            numerator: 1, 
+        // Handle visual type
+        // If type is not defined, default to 'fraction' for backward compatibility
+        const visualType = item.type || 'fraction';
+        
+        div.innerHTML = renderSVG(visualType, { 
+            numerator: item.numerator, 
             denominator: item.denominator, 
             color: item.color, 
             label: item.label 
@@ -323,13 +341,19 @@ function setupDrag(element, targetZone, targetValue) {
 
         if (isOverlapping(itemRect, zoneRect)) {
             const val = parseFloat(element.dataset.value);
-            if (val === targetValue) {
+            // Precision check for floating point math
+            if (Math.abs(val - targetValue) < 0.001) {
                 // CORRECT
                 playSound('correct');
                 element.classList.add('snapped'); // Hide the dragged item
                 
                 // Show visual in plate (cloned)
                 targetZone.innerHTML = element.innerHTML;
+                
+                // Check if we want to end game immediately or after all items? 
+                // Current logic ends immediately after one correct drop.
+                // For Class 4 (Multiple answers), we might want to just flash success and let them drag more?
+                // For simplicity in this version, we show the success modal immediately.
                 
                 document.getElementById('game-feedback').classList.remove('hidden');
                 document.body.style.backgroundColor = '#d4ffdc';

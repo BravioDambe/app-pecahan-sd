@@ -11,6 +11,7 @@
     --color-grass-dark: #56B870;
     --color-red: #FF6B6B;
     --color-red-dark: #D64545;
+    --color-purple: #9C27B0; /* Class 4 Theme */
     --color-text: #2D3047;
     --color-white: #FFFFFF;
     --font-stack: 'Comic Neue', 'Nunito', 'Segoe UI Rounded', 'Comic Sans MS', sans-serif;
@@ -182,6 +183,7 @@ body {
 .class-card.disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    border-color: #ccc !important;
 }
 
 .card-subtitle {
